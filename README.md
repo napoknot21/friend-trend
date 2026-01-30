@@ -1,0 +1,1 @@
+# Trend is Your Friend
