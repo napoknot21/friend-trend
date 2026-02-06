@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import re
 import datetime as dt
-import win32com.client as win32
+import win32com.client as win32 # type: ignore
 
 from typing import Optional, List, Dict, Any, Tuple
 
+from src.utils import str_to_date, date_to_str
 from src.config.parameters import EMAILBOX_SUFFIX
 
 
@@ -95,7 +96,7 @@ def read_emails_from_folder (
         end_date   : Optional[str | dt.datetime | dt.date] = None,
         
         max_items  : int = 300,
-        max_scanned : int = 5000,   # ✅ stop safety
+        max_scanned : int = 50000,   # stop safety
         
     ) -> List[Dict[str, Any]] :
 
@@ -104,8 +105,8 @@ def read_emails_from_folder (
     if folder is None :
         raise ValueError("Folder is None. Check get_folder_by_path() / folder name.")
 
-    start_dt = _to_datetime(start_date)
-    end_dt   = _to_datetime(end_date)
+    start_dt = str_to_date(start_date)
+    end_dt   = str_to_date(end_date)
 
     items = folder.Items
     items.Sort("[ReceivedTime]", True)  # newest first
@@ -116,9 +117,9 @@ def read_emails_from_folder (
     scanned = 0
 
     for msg in items :
-
+        
         if scanned >= max_scanned :
-
+            print(scanned)
             print(f"[!] STOP: max_scanned reached ({max_scanned}).")
             break
 
@@ -127,22 +128,23 @@ def read_emails_from_folder (
         try :
 
             received = msg.ReceivedTime
-            
+
             received = dt.datetime(
                 received.year, received.month, received.day,
                 received.hour, received.minute, received.second
             )
 
-            # ✅ If we sort newest -> oldest:
+            # If we sort newest -> oldest:
             # once we are older than start_dt, everything after is older -> break
-            if start_dt and received < start_dt :
+            if start_dt and received.date() <= start_dt :
                 # break is correct because received will only decrease afterwards
                 break
 
-            if end_dt and received >= end_dt :
+            if end_dt and received.date() > end_dt :
                 # too recent -> skip
                 continue
-
+            
+            print(received)
             results.append(
             
                 {
@@ -165,15 +167,4 @@ def read_emails_from_folder (
     return results
 
 
-def _to_datetime(x: Optional[str | dt.datetime | dt.date]) -> Optional[dt.datetime]:
-    if x is None:
-        return None
-    if isinstance(x, dt.datetime):
-        return x
-    if isinstance(x, dt.date):
-        return dt.datetime(x.year, x.month, x.day)
-    if isinstance(x, str):
-        s = x.strip().replace("/", "-")
-        y, m, d = s.split("-")
-        return dt.datetime(int(y), int(m), int(d))
-    raise TypeError(f"Unsupported date type: {type(x)}")
+

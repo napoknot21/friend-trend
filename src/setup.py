@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import polars as pl
-import win32com.client as win32
+import win32com.client as win32 # type: ignore
 
 from typing import Optional, Any, List, Dict, Tuple
 from src.config.parameters import EMAILBOX_SUFFIX

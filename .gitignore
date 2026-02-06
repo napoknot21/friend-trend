@@ -1,3 +1,7 @@
 __pycache__/
 *.xlsx
 .env
+*.json
+data/
+temp/
+.venv
