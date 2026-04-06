@@ -8,6 +8,12 @@ load_dotenv()
 
 EMAILBOX_SUFFIX = os.getenv("EMAILBOX_SUFFIX")
 
+# -------------- PROCESS SETTINGS --------------
+DEFAULT_LOOKBACK_DAYS = 30
+DEFAULT_LLM_PROVIDER = "openai" # "openai" or "ollama"
+DEFAULT_LLM_MODEL = "gpt-4o-mini" # "gpt-4o-mini" for openai, "mistral" for ollama
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+
 # -------------- MARKET signals --------------
 
 # Words that indicate "market view / positioning / flows / narrative"
@@ -39,7 +45,6 @@ MARKET_PHRASES.update({
 })
 
 
-
 # Directional language (useful for gating)
 DIRECTIONAL_WORDS = {
 
@@ -66,14 +71,144 @@ MACRO_EVENTS = {
 }
 
 
+# -------------- BANK RESEARCH signals (new) --------------
+
+# Words strongly associated with formal bank research reports
+RESEARCH_KEYWORDS = {
+
+    # Analyst actions
+    "initiate": 4, "initiating": 4, "coverage": 3, "upgrade": 4, "downgrade": 4,
+    "reiterate": 3, "reiterating": 3, "maintain": 2, "maintained": 2,
+
+    # Rating language
+    "overweight": 4, "underweight": 4, "equalweight": 4, "equal-weight": 4,
+    "outperform": 4, "underperform": 4, "neutral": 2, "buy": 2, "sell": 2, "hold": 2,
+
+    # Research artifacts
+    "price target": 5, "pt": 1, "eps": 3, "ebitda": 3, "revenue": 2,
+    "forecast": 3, "estimate": 2, "estimates": 2, "consensus": 3,
+    "valuation": 3, "multiple": 2, "pe ratio": 3, "p/e": 3,
+    "dcf": 3, "sum-of-parts": 3, "sotp": 3, "nav": 2,
+
+    # Report structural cues
+    "analyst": 4, "equity research": 5, "fixed income research": 5,
+    "research note": 5, "research report": 5, "sector": 2, "industry": 2,
+    "company note": 4, "flash note": 4, "result note": 4, "preview": 3, "review": 2,
+    "deep dive": 3, "thematic": 3, "thesis": 3,
+
+    # Quantitative / financial modeling language
+    "margin": 2, "free cash flow": 3, "fcf": 3, "capex": 2, "leverage": 2,
+    "debt": 1, "equity": 2, "net income": 2, "beat": 2, "miss": 2, "in line": 2,
+
+}
+
+# Strong multi-word research phrases
+RESEARCH_PHRASES = {
+
+    "we initiate": 6,
+    "initiating coverage": 6,
+    "we upgrade": 6,
+    "we downgrade": 6,
+    "price target of": 5,
+    "price target to": 5,
+    "raise our price target": 6,
+    "lower our price target": 6,
+    "increase our target": 5,
+    "cut our target": 5,
+    "earnings per share": 4,
+    "we reiterate": 5,
+    "our rating": 4,
+    "12-month target": 5,
+    "12 month target": 5,
+    "base case": 3,
+    "bull case": 3,
+    "bear case": 3,
+    "risk/reward": 3,
+    "risk reward": 3,
+    "key risks": 3,
+    "investment thesis": 5,
+    "investment case": 5,
+    "see upside": 4,
+    "see downside": 4,
+    "we see": 3,
+    "we believe": 3,
+    "we think": 3,
+    "in our view": 4,
+    "from a valuation": 4,
+    "at current levels": 3,
+    "relative to peers": 3,
+    "peer group": 3,
+    "sector view": 4,
+    "top pick": 4,
+    "high conviction": 4,
+    "catalyst watch": 4,
+
+}
+
+# Known bank/research sender domain fragments — used to boost score
+BANK_RESEARCH_DOMAINS = {
+
+    "goldmansachs", "gs.com",
+    "jpmorgan", "jpmchase",
+    "morganstanley", "ms.com",
+    "barclays",
+    "deutschebank", "db.com",
+    "citigroup", "citi.com",
+    "ubs.com",
+    "bnpparibas", "bnp.com",
+    "societegenerale", "sgcib",
+    "hsbc.com",
+    "bofa", "bofasecurities", "ml.com",
+    "credit-suisse", "creditsuisse",
+    "wellsfargo",
+    "macquarie",
+    "jefferies",
+    "rbc.com", "rbccm",
+    "td.com", "tdsecurities",
+    "nomura",
+    "mizuho",
+    "stifel",
+    "baird.com",
+    "berenberg",
+    "piper",
+    "cowen",
+    "evercore",
+    "lazard",
+    "rothschild",
+
+}
+
+# Subject-line patterns that strongly suggest a research email
+RE_RESEARCH_SUBJECT = re.compile(
+    r"\b(initiating|initiation|upgrade|downgrade|overweight|underweight|outperform|"
+    r"underperform|price target|equity research|company note|flash note|result note|"
+    r"sector note|thematic|deep.?dive|preview|review)\b",
+    re.IGNORECASE,
+)
+
+# Pattern for explicit price targets in body: "$42", "CHF 120", "EUR 85.00"
+RE_PRICE_TARGET = re.compile(
+    r"(?:price\s+target|target\s+price|pt)[^\d]{0,10}(?:[A-Z]{1,3}\s*)?\d+(?:\.\d{1,2})?",
+    re.IGNORECASE,
+)
+
+# EPS / consensus estimate patterns  "EPS of $2.10", "FY25E EPS"
+RE_EPS_ESTIMATE = re.compile(
+    r"\b(?:eps|ebitda|revenue|sales)\s*(?:of|est\.?|e|forecast)?\s*[\$€£]?\s*\d+(?:\.\d+)?",
+    re.IGNORECASE,
+)
+
+
 # -------------- BLOCKERS (exclude from Step3) --------------
 
 # Product / offer / structured / pricing content (NOT your project scope)
 PRODUCT_OFFER_WORDS = {
 
-    "autocall", "note", "reoffer", "maturity", "coupon", "barrier",
-    "knock-out", "knock out", "ko", "termsheet", "indicative", "refresh", "pricing",
+    "autocall", "reoffer", "maturity", "coupon", "barrier",
+    "knock-out", "knock out", "ko", "termsheet", "indicative", "refresh",
     "observation", "strike", "final terms", "preliminary terms",
+    # note: removed generic "note" and "pricing" — too many false-positives
+    # (research notes use "note", earnings have "pricing power")
 
 }
 
@@ -81,9 +216,18 @@ PRODUCT_OFFER_WORDS = {
 ADMIN_NOISE_WORDS = {
 
     "invoice", "payment", "settlement", "kyc", "aml", "onboarding", "docusign",
-    "meeting", "invitation", "teams", "webinar",
-    "unsubscribe", "noreply", "no-reply", "support", "ticket",
-    "error export", "iddsupport", "salesforce"
+    "meeting invitation", "teams meeting", "webinar invitation",
+    "unsubscribe", "noreply", "no-reply", "support ticket",
+    "error export", "iddsupport", "salesforce",
+    "calendar invite", "conference call dial",
+
+}
+
+# Words that kill a research label even if research keywords score high
+RESEARCH_HARD_BLOCKERS = {
+
+    "termsheet", "final terms", "preliminary terms", "reoffer", "autocall",
+    "knock-out", "invoice", "payment due", "kyc required",
 
 }
 
@@ -134,5 +278,9 @@ FOOTER_CUT_PATTERNS = [
     r"\bif you are not the intended recipient\b",
     r"\bthe information contained in this electronic message\b",
     r"\bcopyright\b",
+    r"\banalyst certification\b",
+    r"\bregulatory disclosures\b",
+    r"\bthis report has been prepared by\b",
+    r"\bthis communication is for informational purposes\b",
 
 ]

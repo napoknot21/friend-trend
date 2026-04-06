@@ -58,3 +58,30 @@ def date_to_str (date : Optional[str | dt.date | dt.datetime] = None, format : s
         raise TypeError("date must be a string, datetime, or None")
 
     return date_obj.strftime(format)
+
+import re
+
+def clean_for_llm(text: str) -> str:
+    """
+    Cleans raw email text to save LLM tokens and remove noise.
+    - Removes URLs
+    - Removes forwarded email headers (">")
+    - Removes excessive newlines
+    """
+    if not text:
+        return ""
+    
+    # Remove URLs
+    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+    
+    # Remove standard forwarded headers
+    text = re.sub(r'(From|To|Sent|Subject):.*', '', text, flags=re.IGNORECASE)
+    
+    # Remove lines starting with >
+    lines = [line.strip() for line in text.split('\n') if not line.strip().startswith('>')]
+    
+    # Rejoin and remove excessive blank lines
+    cleaned = '\n'.join(lines)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    
+    return cleaned.strip()

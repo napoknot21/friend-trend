@@ -1,5 +1,9 @@
 polars
 pandas
 xlsxwriter
-dotenv
+python-dotenv
 pywin32
+sqlalchemy
+fastapi
+uvicorn
+openai

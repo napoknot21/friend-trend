@@ -160,7 +160,7 @@ def read_emails_from_folder (
             )
 
             # With newest->oldest ordering:
-            if start_dt and received.date() <= start_dt:
+            if start_dt and received.date() < start_dt:
                 break  # everything after is older
 
             if end_dt and received.date() > end_dt:
