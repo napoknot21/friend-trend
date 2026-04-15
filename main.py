@@ -8,7 +8,7 @@ import datetime as dt
 from src.utils import date_to_str, clean_for_llm
 from src.outlook import read_emails_from_folder
 from src.classifier import score_email
-from src.api.llm import extract_views_from_text
+from src.llm import extract_views_from_text
 from src.config.parameters import DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL
 from src.db.database import SessionLocal, engine
 from src.db.models import Base, Email, UnderlyingView
@@ -117,7 +117,7 @@ def main() -> None :
             db.commit()
             continue
 
-        if views_data:
+        if views_data :
             print(f"    --> Found {len(views_data)} views!")
             for view in views_data:
                 # Fallback to sender if model didn't extract the bank explicitly
@@ -133,7 +133,8 @@ def main() -> None :
                     bank=bank_name[:30],
                     date=new_email.received_time.date() if new_email.received_time else dt.date.today(),
                     rationale=str(view.get("rationale", "")),
-                    levels=str(view.get("levels", ""))
+                    levels=str(view.get("levels", "")),
+                    confidence=int(view.get("confidence", 50))  # New: save confidence
                 )
                 db.add(new_view)
             db.commit()

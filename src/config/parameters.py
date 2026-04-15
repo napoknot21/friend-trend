@@ -10,8 +10,8 @@ EMAILBOX_SUFFIX = os.getenv("EMAILBOX_SUFFIX")
 
 # -------------- PROCESS SETTINGS --------------
 DEFAULT_LOOKBACK_DAYS = 30
-DEFAULT_LLM_PROVIDER = "openai" # "openai" or "ollama"
-DEFAULT_LLM_MODEL = "gpt-4o-mini" # "gpt-4o-mini" for openai, "mistral" for ollama
+DEFAULT_LLM_PROVIDER = "openai"  # Default to remote OpenAI
+DEFAULT_LLM_MODEL = "gpt-4o-mini"  # Default OpenAI model
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 
 # -------------- MARKET signals --------------
@@ -207,6 +207,10 @@ PRODUCT_OFFER_WORDS = {
     "autocall", "reoffer", "maturity", "coupon", "barrier",
     "knock-out", "knock out", "ko", "termsheet", "indicative", "refresh",
     "observation", "strike", "final terms", "preliminary terms",
+    "trade recap", "trade confirmation", "affirmation", "confirmation notice",
+    "monthly transparency", "transparency figures", "statement summary",
+    "statement of collateral holdings", "navs", "preconfirmation", "pre-confirmation",
+    "option expiries", "position summary", "position update",
     # note: removed generic "note" and "pricing" — too many false-positives
     # (research notes use "note", earnings have "pricing power")
 
@@ -220,6 +224,13 @@ ADMIN_NOISE_WORDS = {
     "unsubscribe", "noreply", "no-reply", "support ticket",
     "error export", "iddsupport", "salesforce",
     "calendar invite", "conference call dial",
+    "trade recap", "monthly transparency", "transparency figures",
+    "trade confirmation", "affirmation", "confirmation notice",
+    "statement summary", "statement of collateral holdings", "navs",
+    "account name mismatch", "preconfirmation", "pre-confirmation",
+    "heroics global strategy sicav-raif", "positions 14042026",
+    "regulatory vm margin summary", "option expiries", "confirmation notice",
+    "please affirm", "trade confirmation", "opening disregard notice",
 
 }
 
@@ -228,6 +239,10 @@ RESEARCH_HARD_BLOCKERS = {
 
     "termsheet", "final terms", "preliminary terms", "reoffer", "autocall",
     "knock-out", "invoice", "payment due", "kyc required",
+    "trade recap", "trade confirmation", "affirmation", "confirmation notice",
+    "monthly transparency", "transparency figures", "statement summary",
+    "statement of collateral holdings", "account name mismatch",
+    "please affirm", "option expiries", "opening disregard notice",
 
 }
 

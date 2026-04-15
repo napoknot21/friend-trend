@@ -1,12 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trend Classifier Dashboard</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trend is Your Friend</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f3f6fb;
+            min-height: 100vh;
+            color: #0f172a;
+            padding: 20px;
+        }
+        #app {
+            max-width: 1440px;
+            margin: 0 auto;
+            min-height: calc(100vh - 40px);
+        }
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
 </html>

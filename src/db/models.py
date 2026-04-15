@@ -6,6 +6,7 @@ import datetime
 class Email(Base):
     __tablename__ = "emails"
     id = Column(Integer, primary_key=True, index=True)
+    md5_hash = Column(String, index=True, unique=True, nullable=True)
     sender = Column(String, index=True)
     subject = Column(String)
     received_time = Column(DateTime)
@@ -22,5 +23,6 @@ class UnderlyingView(Base):
     date = Column(Date, index=True) # derived from email received_time
     rationale = Column(Text)
     levels = Column(String)
+    confidence = Column(Integer, default=50)  # New: confidence score (0-100)
 
     email = relationship("Email", back_populates="views")

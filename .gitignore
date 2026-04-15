@@ -1,3 +1,4 @@
+node_modules/
 __pycache__/
 *.xlsx
 .env
@@ -5,3 +6,4 @@ __pycache__/
 data/
 temp/
 .venv
+*.db

@@ -169,7 +169,7 @@ def _detect_research_signals(
     return rscore, rreasons, flags
 
 
-def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
+def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     """
     Step 1 classifier (no AI).
 
@@ -183,13 +183,17 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
     keep_for_step3 is True for bank_research AND market_commentary emails
     that pass their respective quality gates.
     """
-    if not email_dict:
-        return pl.DataFrame([{
-            "score": 0,
-            "label": "unknown",
-            "keep_for_step3": False,
-            "reasons": ["empty"],
-        }])
+    if not email_dict :
+        return pl.DataFrame(
+            [
+                {
+                    "score": 0,
+                    "label": "unknown",
+                    "keep_for_step3": False,
+                    "reasons": ["empty"],
+                }
+            ]
+        )
 
     subject_raw = _safe_str(email_dict.get("subject"))
     body_raw    = _safe_str(email_dict.get("body"))
@@ -222,11 +226,14 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
     # ------------------------------------------------------------------ #
     market_kw_score = _count_weighted_hits(text_low, MARKET_KEYWORDS)
     score += market_kw_score
-    if market_kw_score > 0:
+
+    if market_kw_score > 0 :
         reasons.append(f"market_keywords:{market_kw_score}")
 
-    for phrase, w in MARKET_PHRASES.items():
+    for phrase, w in MARKET_PHRASES.items() :
+
         if phrase in text_low:
+        
             score += w
             reasons.append(f"phrase:{phrase}")
 
@@ -234,30 +241,38 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
     has_index = bool(RE_INDEX.search(text_raw))
     has_assets = has_fx or has_index
 
-    if has_fx:
+    if has_fx :
+    
         score += 4
         reasons.append("fx")
-    if has_index:
+    
+    if has_index :
+
         score += 2
         reasons.append("index_macro_ticker")
 
     has_direction = any(re.search(rf"\b{re.escape(w)}\b", text_low) for w in DIRECTIONAL_WORDS)
     has_causal    = any(m in text_low for m in CAUSAL_MARKERS)
     has_macro     = any(re.search(rf"\b{re.escape(w)}\b", text_low) for w in MACRO_EVENTS)
-    has_flows     = any(k in text_low for k in (
-        "positioning", "flows", "unwind", "cta", "real money", "deleveraging", "momentum"
-    ))
+    has_flows     = any(k in text_low for k in ("positioning", "flows", "unwind", "cta", "real money", "deleveraging", "momentum"))
 
-    if has_direction:
+    if has_direction :
+
         score += 2
         reasons.append("direction")
-    if has_causal:
+    
+    if has_causal :
+
         score += 2
         reasons.append("causal")
-    if has_flows:
+    
+    if has_flows :
+
         score += 2
         reasons.append("flows")
-    if has_macro:
+    
+    if has_macro :
+
         score += 1
         reasons.append("macro_calendar")
 
@@ -298,7 +313,10 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
     # ------------------------------------------------------------------ #
 
     # Hard admin/noise check (highest priority)
-    if has_admin_noise and score < 3:
+    if has_admin_noise and score < 5:
+        label = "admin_noise"
+
+    elif has_product_offer and has_admin_noise:
         label = "admin_noise"
 
     # Bank research: requires strong evidence, no hard blocks
@@ -315,7 +333,7 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
         label = "bank_research"
 
     # Trade offer: product language without research or causal market narrative
-    elif has_product_offer and not (has_causal or has_flows or has_macro or research_score >= 5):
+    elif has_product_offer and not (has_causal or has_flows or has_macro or research_score >= 7):
         label = "trade_offer"
 
     # Market commentary: clear market structure
@@ -345,7 +363,7 @@ def score_email(email_dict: Optional[Dict[str, Any]] = None) -> pl.DataFrame:
     keep_for_step3 = bool(
         (label == "bank_research"      and research_signal_count >= 2)
         or
-        (label == "market_commentary"  and market_signal_count >= 2)
+        (label == "market_commentary"  and market_signal_count >= 3)
     )
 
     # ------------------------------------------------------------------ #

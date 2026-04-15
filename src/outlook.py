@@ -42,9 +42,11 @@ def get_mailbox_by_suffix(namespace: Optional[Any] = None, emailbox_suffix: Opti
     namespace = get_mapi_namespace() if namespace is None else namespace
     emailbox_suffix = EMAILBOX_SUFFIX if emailbox_suffix is None else emailbox_suffix
 
+    if emailbox_suffix is None:
+        raise ValueError("EMAILBOX_SUFFIX environment variable is not set")
+
     for mailbox in namespace.Folders:
-        
-        if mailbox.Name.lower().endswith(emailbox_suffix.lower()):
+        if mailbox and hasattr(mailbox, 'Name') and mailbox.Name and mailbox.Name.lower().endswith(emailbox_suffix.lower()):
             return mailbox
 
     return None
