@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import os
-import argparse
+import sys
 import uvicorn
 
-from src.backend.src.scripts.cli_utils import setup_environment
+from pathlib import Path
 
-setup_environment(parent_levels=2)
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+if str(ROOT_DIR) not in sys.path :
+    sys.path.insert(0, str(ROOT_DIR))
+
+from src.backend.src.scripts.cli_utils import add_server_arguments, build_parser, setup_environment
+
+setup_environment(__file__, parent_levels=2)
 
 from src.backend.src.api.app import app
 from src.backend.src.api.config import env_bool, env_int
@@ -21,12 +29,14 @@ def main () -> None :
     default_reload = env_bool("API_RELOAD", False)
     default_workers = env_int("API_WORKERS", 1)
 
-    parser = argparse.ArgumentParser(description="Run the FastAPI app with optional uvicorn settings.")
-
-    parser.add_argument("--host", default=default_host, help="Host to bind the server to")
-    parser.add_argument("--port", type=int, default=default_port, help="Port to bind the server to")
-    parser.add_argument("--reload", action="store_true", default=default_reload, help="Enable auto-reload for development")
-    parser.add_argument("--workers", type=int, default=default_workers, help="Number of worker processes")
+    parser = build_parser("Run the FastAPI app with optional uvicorn settings.")
+    add_server_arguments(
+        parser,
+        default_host=default_host,
+        default_port=default_port,
+        default_reload=default_reload,
+        default_workers=default_workers,
+    )
     
     args = parser.parse_args()
 

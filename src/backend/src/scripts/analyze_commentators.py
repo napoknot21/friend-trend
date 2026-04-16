@@ -11,6 +11,10 @@ ROOT_DIR = Path(__file__).resolve().parents[4]
 if str(ROOT_DIR) not in sys.path :
     sys.path.insert(0, str(ROOT_DIR))
 
+from src.backend.src.scripts.cli_utils import setup_environment
+
+setup_environment(__file__, parent_levels=4)
+
 from src.backend.src.db.database import SessionLocal, initialize_database
 from src.backend.src.db.models import UnderlyingView
 

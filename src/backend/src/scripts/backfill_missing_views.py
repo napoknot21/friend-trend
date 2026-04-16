@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-import argparse
+import sys
 
-from src.backend.src.scripts.cli_utils import setup_environment
+from pathlib import Path
 
-setup_environment(parent_levels=4)
+
+ROOT_DIR = Path(__file__).resolve().parents[4]
+
+if str(ROOT_DIR) not in sys.path :
+    sys.path.insert(0, str(ROOT_DIR))
+
+from src.backend.src.scripts.cli_utils import add_date_range_arguments, add_llm_arguments, build_parser, setup_environment
+
+setup_environment(__file__, parent_levels=4)
 
 from src.backend.src.processor import backfill_missing_views
 
@@ -13,11 +21,9 @@ def main () -> None :
     """
     Backfill views for emails already stored in the database.
     """
-    parser = argparse.ArgumentParser(description="Backfill missing market views from emails already stored in the database.")
-    parser.add_argument("--start-date", type=str, default=None, help="Start date (YYYY-MM-DD), defaults to today")
-    parser.add_argument("--end-date", type=str, default=None, help="End date (YYYY-MM-DD), defaults to today")
-    parser.add_argument("--provider", type=str, default=None, help="LLM Provider (openai or ollama)")
-    parser.add_argument("--model", type=str, default=None, help="LLM model name. Inferred by provider if omitted.")
+    parser = build_parser("Backfill missing market views from emails already stored in the database.")
+    add_date_range_arguments(parser)
+    add_llm_arguments(parser)
     args = parser.parse_args()
 
     result = backfill_missing_views(
