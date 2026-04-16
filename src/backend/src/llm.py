@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -6,7 +8,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from openai import OpenAI
 
-from src.config.parameters import OLLAMA_URL
+from src.backend.src.config.parameters import OLLAMA_URL
 
 
 def _empty_batch_result(emails_data: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
@@ -220,37 +222,27 @@ def extract_views_from_batch (
 
     prompt = _batch_prompt(combined_text)
 
-    if provider == "openai" :
-
+    if provider == "openai":
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1
         )
-
         content = response.choices[0].message.content
-
-    elif provider == "ollama" :
-
+    elif provider == "ollama":
         payload = {
-        
             "model": model,
             "prompt": prompt,
             "stream": False
-        
         }
-
         resp = requests.post(OLLAMA_URL, json=payload)
         content = resp.json().get("response", "")
-    
-    else :
+    else:
         raise ValueError(f"Unsupported provider: {provider}")
 
     result = _extract_json_payload(content)
-
-    if result is None :
+    if result is None:
         print(f"Failed to parse LLM response as JSON: {content}")
         return _empty_batch_result(emails_data)
 

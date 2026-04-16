@@ -6,8 +6,8 @@ from typing import Optional, List, Dict, Any
 import win32com.client as win32  # type: ignore
 import pythoncom  # type: ignore
 
-from src.utils import str_to_date
-from src.config.parameters import EMAILBOX_SUFFIX
+from src.backend.src.utils import str_to_date
+from src.backend.src.config.parameters import EMAILBOX_SUFFIX
 
 
 MAILITEM_CLASS = 43

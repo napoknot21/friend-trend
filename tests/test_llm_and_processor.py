@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import unittest
 
-from src.llm import _batch_prompt, _extract_json_payload, _single_email_prompt, normalize_batch_result
-from src.processor import _coerce_confidence, _normalize_text_key, _view_signature
+from src.backend.src.llm import _batch_prompt, _extract_json_payload, _single_email_prompt, normalize_batch_result
+from src.backend.src.processor import _coerce_confidence, _normalize_text_key, _view_signature
 
 
 class LlmNormalizationTests(unittest.TestCase):

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import polars as pl
 
-from src.config.parameters import (
+from src.backend.src.config.parameters import (
     MARKET_KEYWORDS, MARKET_PHRASES, DIRECTIONAL_WORDS,
     CAUSAL_MARKERS, MACRO_EVENTS, PRODUCT_OFFER_WORDS,
     ADMIN_NOISE_WORDS, RE_FX_PAIR_SLASH, RE_FX_PAIR_JOIN,
@@ -17,7 +17,7 @@ from src.config.parameters import (
     RE_EPS_ESTIMATE,
     INTERNAL_ORG_PATTERNS, INTERNAL_DIGEST_KEYWORDS,
 )
-from src.utils import resolve_sender_hint
+from src.backend.src.utils import resolve_sender_hint
 
 
 def _safe_str(x: Any) -> str:

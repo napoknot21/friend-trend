@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const envDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const envDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 function envBool(value, fallback) {
   if (value === undefined || value === null || value === '') {

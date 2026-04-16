@@ -1,10 +1,10 @@
 node_modules/
 __pycache__/
+.vite/
+dist/
 *.xlsx
 .env
-*.json
 data/
 temp/
 .venv
 *.db
-trend_classifier.db

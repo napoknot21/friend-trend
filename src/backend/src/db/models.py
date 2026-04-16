@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Date
 from sqlalchemy.orm import relationship
-from src.db.database import Base
+from src.backend.src.db.database import Base
 import datetime
 
 class Email(Base) :

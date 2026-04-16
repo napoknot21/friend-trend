@@ -4,7 +4,7 @@ import polars as pl
 import win32com.client as win32 # type: ignore
 
 from typing import Optional, Any, List, Dict, Tuple
-from src.config.parameters import EMAILBOX_SUFFIX
+from src.backend.src.config.parameters import EMAILBOX_SUFFIX
 
 
 def get_mapi_namespace (outlook : Optional[win32.Dispatch] = None) :

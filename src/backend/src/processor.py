@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 import datetime as dt
 import hashlib
 import re
 from typing import Optional
 
-from src.utils import date_to_str, clean_for_llm, resolve_sender_hint
-from src.outlook import read_emails_from_folder
-from src.classifier import score_email
-from src.llm import extract_views_from_batch
-from src.config.parameters import DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL
-from src.db.database import SessionLocal, engine
-from src.db.models import Base, Email, UnderlyingView
+from src.backend.src.utils import date_to_str, clean_for_llm, resolve_sender_hint
+from src.backend.src.outlook import read_emails_from_folder
+from src.backend.src.classifier import score_email
+from src.backend.src.llm import extract_views_from_batch
+from src.backend.src.config.parameters import DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL
+from src.backend.src.db.database import SessionLocal, initialize_database
+from src.backend.src.db.models import Email, UnderlyingView
 
 
 def ensure_db() -> None:
-    Base.metadata.create_all(bind=engine)
+    initialize_database()
 
 
 def build_email_hash(email_dict: dict) -> str:

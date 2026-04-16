@@ -66,6 +66,7 @@ def date_to_str (date : Optional[str | dt.date | dt.datetime] = None, format : s
 
     return date_obj.strftime(format)
 
+
 def clean_for_llm(text: str) -> str:
     """
     Cleans raw email text to save LLM tokens and remove noise.

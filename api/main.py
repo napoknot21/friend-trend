@@ -1,8 +1,11 @@
-import argparse
-import datetime as dt
+from __future__ import annotations
+
 import os
 import sys
+import argparse
 import threading
+import datetime as dt
+
 from collections import Counter, defaultdict
 from typing import Any, Callable, Dict, List, Optional
 
@@ -14,6 +17,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
@@ -32,42 +36,62 @@ process_state = {
 }
 
 SORT_FIELDS = {
-    "date": UnderlyingView.date,
-    "confidence": UnderlyingView.confidence,
-    "underlying": UnderlyingView.underlying,
-    "bank": UnderlyingView.bank,
-    "sentiment": UnderlyingView.sentiment,
+
+    "date" : UnderlyingView.date,
+    "confidence" : UnderlyingView.confidence,
+    "underlying" : UnderlyingView.underlying,
+    "bank" : UnderlyingView.bank,
+    "sentiment" : UnderlyingView.sentiment,
+
 }
 
 SENTIMENT_ORDER = ["bullish", "bearish", "neutral"]
+
 CONFIDENCE_BUCKETS = [
+
     ("0-20", 0, 20),
     ("21-40", 21, 40),
     ("41-60", 41, 60),
     ("61-80", 61, 80),
     ("81-100", 81, 100),
+
 ]
 
 
-def _env_bool(name: str, default: bool) -> bool:
+def _env_bool (name : str, default : bool) -> bool :
+    """
+    
+    """
     value = os.getenv(name)
-    if value is None:
+    
+    if value is None :
         return default
+    
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _env_int(name: str, default: int) -> int:
+def _env_int(name: str, default: int) -> int :
+    """
+    
+    """
     value = os.getenv(name)
-    if value is None:
+    
+    if value is None :
         return default
-    try:
+    
+    try :
         return int(value)
-    except ValueError:
+    
+    except ValueError :
         return default
 
 
-def _env_csv(name: str) -> List[str]:
+def _env_csv(name: str) -> List[str] :
+    """
+    
+    """
     value = os.getenv(name, "")
+    
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
