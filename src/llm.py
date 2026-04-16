@@ -164,7 +164,7 @@ def _batch_prompt(combined_text: str) -> str:
     """
 
 
-def _single_email_prompt(text: str) -> str:
+def _single_email_prompt (text : str) -> str :
     return f"""
     Analyze the following email text for market views on FX and Equities positioning.
 
@@ -201,7 +201,13 @@ def _single_email_prompt(text: str) -> str:
     """
 
 
-def extract_views_from_batch(emails_data: List[Dict[str, str]], provider: str = "openai", model: str = "gpt-4o-mini") -> List[List[Dict[str, Any]]]:
+def extract_views_from_batch (
+        
+        emails_data : List[Dict[str, str]],
+        provider : str = "openai",
+        model : str = "gpt-4o-mini"
+    
+    ) -> List[List[Dict[str, Any]]] :
     """
     Extract market views from a batch of email texts using LLM.
     emails_data: list of dicts with 'id', 'body', 'sender', etc.

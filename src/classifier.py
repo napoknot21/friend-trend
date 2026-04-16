@@ -15,7 +15,9 @@ from src.config.parameters import (
     RESEARCH_KEYWORDS, RESEARCH_PHRASES, BANK_RESEARCH_DOMAINS,
     RESEARCH_HARD_BLOCKERS, RE_RESEARCH_SUBJECT, RE_PRICE_TARGET,
     RE_EPS_ESTIMATE,
+    INTERNAL_ORG_PATTERNS, INTERNAL_DIGEST_KEYWORDS,
 )
+from src.utils import resolve_sender_hint
 
 
 def _safe_str(x: Any) -> str:
@@ -197,12 +199,15 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
 
     subject_raw = _safe_str(email_dict.get("subject"))
     body_raw    = _safe_str(email_dict.get("body"))
-    sender      = _safe_str(email_dict.get("sender", email_dict.get("from", "")))
+    raw_sender  = _safe_str(email_dict.get("sender", email_dict.get("from", "")))
+    sender      = _safe_str(email_dict.get("sender_hint") or resolve_sender_hint(raw_sender, body_raw))
 
     # Strip footer (very important)
     body_core = strip_footer(body_raw)
     text_raw  = f"{subject_raw}\n{body_core}"
     text_low  = text_raw.lower()
+    subject_low = subject_raw.lower()
+    sender_low = f"{raw_sender}\n{sender}".lower()
 
     reasons: List[str] = []
     score = 0
@@ -212,6 +217,12 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     # ------------------------------------------------------------------ #
     has_product_offer = _contains_any(text_low, PRODUCT_OFFER_WORDS)
     has_admin_noise   = _contains_any(text_low, ADMIN_NOISE_WORDS)
+    has_internal_org = any(
+        marker in subject_low or marker in text_low or marker in sender_low
+        for marker in INTERNAL_ORG_PATTERNS
+    )
+    has_internal_digest_keyword = any(keyword in subject_low for keyword in INTERNAL_DIGEST_KEYWORDS)
+    is_internal_digest = has_internal_org and has_internal_digest_keyword
 
     if has_product_offer:
         score -= 8
@@ -220,6 +231,10 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     if has_admin_noise:
         score -= 8
         reasons.append("admin_noise")
+
+    if is_internal_digest:
+        score -= 12
+        reasons.append("internal_digest")
 
     # ------------------------------------------------------------------ #
     #  MARKET COMMENTARY scoring (unchanged logic)                        #
@@ -313,7 +328,10 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     # ------------------------------------------------------------------ #
 
     # Hard admin/noise check (highest priority)
-    if has_admin_noise and score < 5:
+    if is_internal_digest:
+        label = "internal_digest"
+
+    elif has_admin_noise and score < 5:
         label = "admin_noise"
 
     elif has_product_offer and has_admin_noise:
@@ -386,6 +404,8 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
         "has_price_target":  research_flags["has_price_target"],
         "has_eps_estimate":  research_flags["has_eps_estimate"],
         "has_bank_sender":   research_flags["has_bank_sender"],
+        "sender_hint":       sender,
+        "is_internal_digest": is_internal_digest,
     })
 
     # IMPORTANT: 1-row dataframe

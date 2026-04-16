@@ -111,6 +111,31 @@ def _get_headers(msg: Any) -> str :
         return ""
 
 
+def _get_sender_email_address(msg: Any) -> str:
+    """
+    Try to resolve a real SMTP sender address, even for Exchange users.
+    """
+    PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E"
+
+    try:
+        smtp_address = _safe_str(msg.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS))
+        if smtp_address and "@" in smtp_address:
+            return smtp_address
+    except Exception:
+        pass
+
+    try:
+        sender = getattr(msg, "Sender", None)
+        exchange_user = sender.GetExchangeUser() if sender is not None else None
+        smtp_address = _safe_str(getattr(exchange_user, "PrimarySmtpAddress", ""))
+        if smtp_address and "@" in smtp_address:
+            return smtp_address
+    except Exception:
+        pass
+
+    return _safe_str(getattr(msg, "SenderEmailAddress", ""))
+
+
 def read_emails_from_folder (
         
         folder: Optional[Any] = None,
@@ -174,7 +199,7 @@ def read_emails_from_folder (
             row = {
                 "received_time": received,
                 "subject": _safe_str(getattr(msg, "Subject", "")),
-                "sender": _safe_str(getattr(msg, "SenderEmailAddress", "")),
+                "sender": _get_sender_email_address(msg),
                 "body": body_text,
                 "html_body": body_html,
             }

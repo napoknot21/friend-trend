@@ -8,11 +8,40 @@ load_dotenv()
 
 EMAILBOX_SUFFIX = os.getenv("EMAILBOX_SUFFIX")
 
+
+def _csv_env_set(name: str, defaults: set[str]) -> set[str]:
+    raw_value = os.getenv(name)
+    if not raw_value:
+        return set(defaults)
+    return {item.strip().lower() for item in raw_value.split(",") if item.strip()}
+
 # -------------- PROCESS SETTINGS --------------
 DEFAULT_LOOKBACK_DAYS = 30
 DEFAULT_LLM_PROVIDER = "openai"  # Default to remote OpenAI
 DEFAULT_LLM_MODEL = "gpt-4o-mini"  # Default OpenAI model
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+
+# -------------- INTERNAL MAIL FILTERING --------------
+
+# Internal organization markers used to exclude house newsletters / briefs.
+INTERNAL_ORG_PATTERNS = _csv_env_set(
+    "INTERNAL_ORG_PATTERNS",
+    {
+        "heroics capital",
+        "heroics-capital.com",
+        "heroics capital partners",
+    },
+)
+
+# Keep this intentionally narrow so forwarded bank notes are not blocked.
+INTERNAL_DIGEST_KEYWORDS = _csv_env_set(
+    "INTERNAL_DIGEST_KEYWORDS",
+    {
+        "morning brief",
+        "daily brief",
+        "market brief",
+    },
+)
 
 # -------------- MARKET signals --------------
 

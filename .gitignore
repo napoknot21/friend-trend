@@ -7,3 +7,4 @@ data/
 temp/
 .venv
 *.db
+trend_classifier.db

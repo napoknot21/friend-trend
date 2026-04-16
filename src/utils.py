@@ -2,7 +2,14 @@ from __future__ import annotations
 
 
 import datetime as dt
+import re
 from typing import Optional, List 
+
+
+EMAIL_ADDRESS_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+FORWARDED_FROM_PATTERNS = [
+    re.compile(r"^\s*(?:from|de)\s*:\s*(.+)$", re.IGNORECASE | re.MULTILINE),
+]
 
 
 def str_to_date (date : Optional[str | dt.datetime | dt.date], format : str = "%Y-%m-%d") -> Optional[dt.date] :
@@ -59,8 +66,6 @@ def date_to_str (date : Optional[str | dt.date | dt.datetime] = None, format : s
 
     return date_obj.strftime(format)
 
-import re
-
 def clean_for_llm(text: str) -> str:
     """
     Cleans raw email text to save LLM tokens and remove noise.
@@ -85,3 +90,29 @@ def clean_for_llm(text: str) -> str:
     cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
     
     return cleaned.strip()
+
+
+def extract_email_address(text: str) -> Optional[str]:
+    if not text:
+        return None
+    match = EMAIL_ADDRESS_RE.search(text)
+    if not match:
+        return None
+    return match.group(0).lower()
+
+
+def extract_forwarded_sender(text: str) -> Optional[str]:
+    if not text:
+        return None
+
+    for pattern in FORWARDED_FROM_PATTERNS:
+        for match in pattern.finditer(text):
+            email = extract_email_address(match.group(1))
+            if email:
+                return email
+
+    return None
+
+
+def resolve_sender_hint(sender: str, text: str = "") -> str:
+    return extract_forwarded_sender(text) or str(sender or "")

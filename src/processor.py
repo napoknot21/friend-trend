@@ -3,7 +3,7 @@ import hashlib
 import re
 from typing import Optional
 
-from src.utils import date_to_str, clean_for_llm
+from src.utils import date_to_str, clean_for_llm, resolve_sender_hint
 from src.outlook import read_emails_from_folder
 from src.classifier import score_email
 from src.llm import extract_views_from_batch
@@ -92,7 +92,8 @@ def _create_view(db, new_email: Email, view: object, seen_signatures: Optional[s
         print(f"[WARN] Skipping non-dict view for email_id={new_email.id}: {view!r}")
         return False
 
-    bank_name = str(view.get("bank") or new_email.sender)
+    sender_hint = resolve_sender_hint(new_email.sender, new_email.body_summary or "")
+    bank_name = str(view.get("bank") or sender_hint)
     if "@" in bank_name:
         bank_name = bank_name.split("@")[-1].split(".")[0].capitalize()
 
@@ -131,7 +132,7 @@ def _extract_views_for_saved_emails(
         {
             "id": email_info["email"].id,
             "body": email_info["cleaned_body"],
-            "sender": email_info["email"].sender,
+            "sender": email_info.get("sender_hint") or resolve_sender_hint(email_info["email"].sender, email_info["cleaned_body"]),
         }
         for email_info in saved_emails
     ]
@@ -205,8 +206,14 @@ def process_email_range(
     reprocessed_emails = 0
 
     for email_dict in emails_raw:
-    
-        df_one = score_email(email_dict)
+        sender_hint = resolve_sender_hint(
+            email_dict.get("sender", email_dict.get("from", "")),
+            email_dict.get("body", ""),
+        )
+        scored_email = dict(email_dict)
+        scored_email["sender_hint"] = sender_hint
+
+        df_one = score_email(scored_email)
     
         if df_one is None or df_one.is_empty() :
 
@@ -231,11 +238,12 @@ def process_email_range(
                 has_views = db.query(UnderlyingView.id).filter(UnderlyingView.email_id == existing.id).first() is not None
                 if not has_views:
                     cleaned_body = existing.body_summary or clean_for_llm(email_dict.get("body", ""))
-                    saved_emails.append({"email": existing, "cleaned_body": cleaned_body})
+                    saved_emails.append({"email": existing, "cleaned_body": cleaned_body, "sender_hint": sender_hint})
                     reprocessed_emails += 1
                     print(f"[~] Re-queued saved email without views: {existing.subject}")
             else:
                 email_dict["md5_hash"] = md5_hash
+                email_dict["sender_hint"] = sender_hint
                 new_valid_emails.append(email_dict)
                 print(f"[+] Kept email: {email_dict.get('subject', 'no subject')} - label: {row.get('label')} - reasons: {reasons}")
         else :
@@ -246,7 +254,7 @@ def process_email_range(
         cleaned_body = clean_for_llm(item.get("body", ""))
         new_email = Email(
             md5_hash=item["md5_hash"],
-            sender=item.get("sender", item.get("from", "")),
+            sender=item.get("sender_hint") or item.get("sender", item.get("from", "")),
             subject=item.get("subject", ""),
             received_time=item.get("received_time"),
             body_summary=cleaned_body
@@ -254,7 +262,7 @@ def process_email_range(
         db.add(new_email)
         db.commit()
         db.refresh(new_email)
-        saved_emails.append({"email": new_email, "cleaned_body": cleaned_body})
+        saved_emails.append({"email": new_email, "cleaned_body": cleaned_body, "sender_hint": item.get("sender_hint")})
 
     views_created = _extract_views_for_saved_emails(db, saved_emails, provider, model)
 
@@ -289,7 +297,11 @@ def backfill_missing_views(
 
     emails_missing_views = _query_emails_missing_views(db, start_date_str, end_date_str)
     saved_emails = [
-        {"email": email, "cleaned_body": email.body_summary or ""}
+        {
+            "email": email,
+            "cleaned_body": email.body_summary or "",
+            "sender_hint": resolve_sender_hint(email.sender, email.body_summary or ""),
+        }
         for email in emails_missing_views
         if email.body_summary
     ]
