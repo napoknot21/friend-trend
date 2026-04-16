@@ -16,6 +16,7 @@ from src.backend.src.config.parameters import (
     RESEARCH_HARD_BLOCKERS, RE_RESEARCH_SUBJECT, RE_PRICE_TARGET,
     RE_EPS_ESTIMATE,
     INTERNAL_ORG_PATTERNS, INTERNAL_DIGEST_KEYWORDS,
+    ADMIN_SENDER_PATTERNS, ADMIN_HARD_BLOCKERS, EVENT_MARKETING_WORDS,
 )
 from src.backend.src.utils import resolve_sender_hint
 
@@ -217,6 +218,16 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     # ------------------------------------------------------------------ #
     has_product_offer = _contains_any(text_low, PRODUCT_OFFER_WORDS)
     has_admin_noise   = _contains_any(text_low, ADMIN_NOISE_WORDS)
+    has_admin_sender = any(pattern in sender_low for pattern in ADMIN_SENDER_PATTERNS)
+    has_admin_hard_block = any(
+        marker in subject_low or marker in text_low or marker in sender_low
+        for marker in ADMIN_HARD_BLOCKERS
+    )
+    event_marketing_hits = [
+        marker for marker in EVENT_MARKETING_WORDS
+        if marker in subject_low or marker in text_low
+    ]
+    has_event_marketing = len(event_marketing_hits) >= 2
     has_internal_org = any(
         marker in subject_low or marker in text_low or marker in sender_low
         for marker in INTERNAL_ORG_PATTERNS
@@ -231,6 +242,18 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     if has_admin_noise:
         score -= 8
         reasons.append("admin_noise")
+
+    if has_admin_sender:
+        score -= 12
+        reasons.append("admin_sender")
+
+    if has_admin_hard_block:
+        score -= 12
+        reasons.append("admin_hard_block")
+
+    if has_event_marketing:
+        score -= 10
+        reasons.append("event_marketing")
 
     if is_internal_digest:
         score -= 12
@@ -331,6 +354,9 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
     if is_internal_digest:
         label = "internal_digest"
 
+    elif has_admin_sender or has_admin_hard_block or has_event_marketing:
+        label = "admin_noise"
+
     elif has_admin_noise and score < 5:
         label = "admin_noise"
 
@@ -406,6 +432,9 @@ def score_email (email_dict : Optional[Dict[str, Any]] = None) -> pl.DataFrame :
         "has_bank_sender":   research_flags["has_bank_sender"],
         "sender_hint":       sender,
         "is_internal_digest": is_internal_digest,
+        "has_admin_sender":  has_admin_sender,
+        "has_admin_hard_block": has_admin_hard_block,
+        "has_event_marketing": has_event_marketing,
     })
 
     # IMPORTANT: 1-row dataframe

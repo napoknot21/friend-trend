@@ -43,6 +43,46 @@ INTERNAL_DIGEST_KEYWORDS = _csv_env_set(
     },
 )
 
+# Automated internal / event / ops senders that should never reach the LLM.
+ADMIN_SENDER_PATTERNS = _csv_env_set(
+    "ADMIN_SENDER_PATTERNS",
+    {
+        "confirmations@heroics-capital.com",
+        "conferences@isda.org",
+        "emea.collateral@",
+        "fxsetteu@",
+        "marquee_pulse@",
+    },
+)
+
+# Strong admin / operational phrases that should override market-looking noise.
+ADMIN_HARD_BLOCKERS = _csv_env_set(
+    "ADMIN_HARD_BLOCKERS",
+    {
+        "current exposures to you",
+        "current margin requirements",
+        "attached is a summary of morgan stanley's current exposures",
+        "firmwide ops",
+        "please agree with below option",
+        "indicative spot/vol shocks",
+        "shock table",
+    },
+)
+
+# Conference / webinar / replay marketing language.
+EVENT_MARKETING_WORDS = _csv_env_set(
+    "EVENT_MARKETING_WORDS",
+    {
+        "watch live",
+        "catch the replay",
+        "virtual conference",
+        "educational credits",
+        "programme topics include",
+        "#isdaconferences",
+        "in depth training",
+    },
+)
+
 # -------------- MARKET signals --------------
 
 # Words that indicate "market view / positioning / flows / narrative"
@@ -217,7 +257,7 @@ RE_RESEARCH_SUBJECT = re.compile(
 
 # Pattern for explicit price targets in body: "$42", "CHF 120", "EUR 85.00"
 RE_PRICE_TARGET = re.compile(
-    r"(?:price\s+target|target\s+price|pt)[^\d]{0,10}(?:[A-Z]{1,3}\s*)?\d+(?:\.\d{1,2})?",
+    r"\b(?:price\s+target|target\s+price|pt)\b[^\d]{0,10}(?:[A-Z]{1,3}\s*)?\d+(?:\.\d{1,2})?",
     re.IGNORECASE,
 )
 
